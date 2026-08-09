@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>تقييم المنتجات</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 25px 15px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .product {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .product img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .product h2 {
+            margin: 5px 0 15px;
+            text-align: center;
+        }
+
+        .rating {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .rating button {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .rating button.selected {
+            background: #222;
+            color: white;
+        }
+
+        .rating-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        #submitBtn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #222;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #submitBtn:disabled {
+            opacity: 0.5;
+        }
+
+        #message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>تقييم منتجات المهرجان ⭐</h1>
+
+    <p class="description">
+        نحب نعرف رأيك! قيّم كل منتج من 1 إلى 10.
+    </p>
+
+    <div id="products"></div>
+
+    <button id="submitBtn" onclick="submitRatings()">
+        إرسال التقييمات
+    </button>
+
+    <div id="message"></div>
+
+</div>
+
+
+<script>
+
+    // حطي هنا رابط Google Apps Script
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkkKCNhqdJ_KDRSzWD2HR4hPE8t4XI-Jm1eN7YYLrgt7x20jtVYpEjEhgM3dldq4uR/exec";
+
+
+    // المنتجات
+    // تقدرين تزيدين منتجات من هنا في أي وقت
+    const products = [
+
+        {
+            name: "ذرة (ثريا)",
+            image: "images/product1.jpg"
+        },
+
+        {
+            name: "شاي كرك (رتاج و سلمى)",
+            image: "images/product2.jpg"
+        },
+
+        {
+            name: "مشاكيك (أمجد)",
+            image: "images/product3.jpg"
+        },
+
+        {
+            name: "فشار (ريا خليفة)",
+            image: "images/product4.jpg"
+        },
+
+        {
+            name: "رخال (زهرة و تقوى)",
+            image: "images/product5.jpg"
+        },
+
+        {
+            name: "بطاطس (زوينة سالم)",
+            image: "images/product6.jpg"
+        },
+
+        {
+            name: "سلطة بذور الشيا (رزان)",
+            image: "images/product7.jpg"
+        },
+
+        {
+            name: "سويت (أطياب و أبرار)",
+            image: "images/product8.jpg"
+        }
+
+    ];
+
+
+    const selectedRatings = {};
+
+
+    function displayProducts() {
+
+        const container = document.getElementById("products");
+
+        products.forEach((product, index) => {
+
+            const productDiv = document.createElement("div");
+
+            productDiv.className = "product";
+
+            productDiv.innerHTML = `
+
+                <img src="${product.image}" alt="${product.name}">
+
+                <h2>${product.name}</h2>
+
+                <div class="rating">
+
+                    ${[1,2,3,4,5,6,7,8,9,10].map(number => `
+
+                        <button
+                            onclick="selectRating(${index}, ${number})"
+                            id="rating-${index}-${number}">
+                            ${number}
+                        </button>
+
+                    `).join("")}
+
+                </div>
+
+                <div class="rating-text" id="text-${index}">
+                    لم يتم اختيار تقييم
+                </div>
+
+            `;
+
+            container.appendChild(productDiv);
+        });
+    }
+
+
+    function selectRating(productIndex, rating) {
+
+        selectedRatings[productIndex] = rating;
+
+        for (let i = 1; i <= 10; i++) {
+
+            const button =
+                document.getElementById(
+                    `rating-${productIndex}-${i}`
+                );
+
+            button.classList.remove("selected");
+        }
+
+        document
+            .getElementById(
+                `rating-${productIndex}-${rating}`
+            )
+            .classList.add("selected");
+
+        document.getElementById(
+            `text-${productIndex}`
+        ).innerText = `تقييمك: ${rating} / 10`;
+    }
+
+
+    async function submitRatings() {
+
+        if (Object.keys(selectedRatings).length !== products.length) {
+
+            document.getElementById("message").innerText =
+                "⚠️ فضلاً قيّمي جميع المنتجات أولاً.";
+
+            return;
+        }
+
+
+        const userId =
+            "User-" + Math.random().toString(36).substring(2, 10);
+
+
+        const ratings = products.map((product, index) => {
+
+            return {
+                product: product.name,
+                rating: selectedRatings[index]
+            };
+
+        });
+
+
+        const data = {
+            user: userId,
+            ratings: ratings
+        };
+
+
+        const button =
+            document.getElementById("submitBtn");
+
+        button.disabled = true;
+
+        button.innerText = "جاري إرسال التقييمات...";
+
+
+        try {
+
+            await fetch(GOOGLE_SCRIPT_URL, {
+
+                method: "POST",
+
+                mode: "no-cors",
+
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+
+                body: JSON.stringify(data)
+
+            });
+
+
+            document.getElementById("message").innerText =
+                "✅ شكرًا لك! تم إرسال تقييمك.";
+
+            button.innerText = "تم الإرسال";
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("message").innerText =
+                "❌ حدث خطأ، حاولي مرة أخرى.";
+
+            button.disabled = false;
+
+            button.innerText = "إرسال التقييمات";
+        }
+    }
+
+
+    displayProducts();
+
+</script>
+
+</body>
+</html>
